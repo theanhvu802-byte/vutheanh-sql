@@ -3,7 +3,7 @@
 
 câu 1 
 
-
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/2fda1c17-9ca0-4249-b824-3b6ad8f24bf3" />
 
 câu 2 
 
@@ -34,6 +34,15 @@ câu 8
 
 câu 9 
 
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/5285eb54-1825-43da-aca4-577613acebd8" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/594a3601-4008-4562-b427-6586ff4a517d" />
+ đã nạp xong nhưng em quên chụp
+
+ câu 10 
+
+ câu 11 
+ 
+ <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ef7268b2-15a3-4a5c-81f2-a343120cd762" />
+
+câu 12 
 
 
