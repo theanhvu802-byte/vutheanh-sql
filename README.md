@@ -33,3 +33,7 @@ câu 8
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/bf51634a-560f-4fbd-9b06-f0c86951cd54" />
 
 câu 9 
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/5285eb54-1825-43da-aca4-577613acebd8" />
+
+
