@@ -45,4 +45,9 @@ câu 9
 
 câu 12 
 
+câu 17 
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ba06a604-a9d9-49eb-8bea-eaab2386bd1c" />
+
+
 
