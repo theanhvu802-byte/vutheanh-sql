@@ -39,11 +39,33 @@ câu 9
 
  câu 10 
 
+ <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/8adcda08-684d-468c-98cd-7e35b877926a" />
+
+
  câu 11 
  
- <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/ef7268b2-15a3-4a5c-81f2-a343120cd762" />
+ <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/f095e713-26fe-4c6d-8cb9-a73a3c65fbe2" />
+
 
 câu 12 
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/2ccffcc1-15d2-4c06-b04f-3bfbb7bc871d" />
+
+câu 13
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/dcb936b8-c912-4601-9e18-2e627f6a358c" />
+
+câu 14 
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/c808db6c-4300-460d-bf98-542c6b701e66" />
+
+câu 15 
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/6cf3a0fe-4f5b-435c-95f6-047672370e8b" />
+
+câu 16 
+
+ <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/8adcda08-684d-468c-98cd-7e35b877926a" />
 
 câu 17 
 
