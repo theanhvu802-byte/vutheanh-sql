@@ -9,13 +9,11 @@ SAU ĐÂY EM XIN PHÉP TRÌNH BÀY
 
 # PHẦN 1 : Thiết kế và Khởi tạo Cấu trúc Dữ liệu
 
--- 1. Tạo Database (Đúng tên: [TenDuAn]_[MaSV])
+``` 1. Tạo Database (Đúng tên: [TenDuAn]_[MaSV])
 CREATE DATABASE [QuanLyKetQuaHocTap_K235480106004];
 GO
-
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
-
 -- 2. Tạo bảng [DanhSachSinhVien] (Sử dụng BướuLạcĐà và ngoặc [])
 CREATE TABLE [DanhSachSinhVien] (
     [MaSinhVien] NVARCHAR(20) PRIMARY KEY, -- PK: Khóa chính
@@ -41,7 +39,7 @@ CREATE TABLE [KetQuaHocTap] (
     CONSTRAINT FK_SinhVien FOREIGN KEY ([MaSinhVien]) REFERENCES [DanhSachSinhVien]([MaSinhVien]),
     CONSTRAINT FK_MonHoc FOREIGN KEY ([MaMonHoc]) REFERENCES [DanhSachMonHoc]([MaMonHoc])
 );
-
+```
  <img width="1919" height="1079" alt="Ảnh chụp màn hình 2026-04-23 012814" src="https://github.com/user-attachments/assets/70ca71bb-ef52-441b-934f-3a9a9a04dbd7" />
 
  
@@ -92,7 +90,7 @@ Logic bài toán: "Trong hệ thống quản lý đào tạo, việc theo dõi t
 
 Lý do cần Function:
 "Vì việc tính tổng tín chỉ phải thực hiện liên tục cho hàng nghìn sinh viên và trên nhiều báo cáo khác nhau, nên em xây dựng Function này để tối ưu hóa việc tái sử dụng code. Thay vì viết lại câu lệnh tính toán ở khắp mọi nơi, em chỉ cần gọi hàm này ra là có ngay kết quả chính xác."
-
+```
 GO
 CREATE FUNCTION [fn_DanhSachMonDaHoc] (@MaSV NVARCHAR(20))
 RETURNS TABLE
@@ -109,7 +107,7 @@ RETURN (
 GO
 -- Xem danh sách các môn mà Thế Anh đã học và điểm số tương ứng
 SELECT * FROM [dbo].[fn_DanhSachMonDaHoc]('K235480106004');
-
+```
 <img width="1919" height="1079" alt="Ảnh chụp màn hình 2026-04-23 022133" src="https://github.com/user-attachments/assets/1cc2592c-9089-4743-93c0-a292e0768c1d" />
 
  - Ảnh trên em đã khai thác hàm sql 
@@ -117,7 +115,7 @@ SELECT * FROM [dbo].[fn_DanhSachMonDaHoc]('K235480106004');
 Yêu cầu: Xây dựng một hàm để nhà trường có thể nhanh chóng truy xuất Danh sách các môn học mà một sinh viên cụ thể đã tham gia thi, kèm theo số tín chỉ và điểm số tương ứng của môn đó.
 
 Lý do cần hàm này: Thay vì mỗi lần xem điểm của một sinh viên phải viết lệnh JOIN phức tạp giữa bảng Môn học và bảng Điểm, em đóng gói nó vào một hàm. Chỉ cần truyền Mã sinh viên vào là có ngay bảng điểm chi tiết của người đó
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -137,7 +135,7 @@ RETURN (
 GO
 -- Xem bảng điểm chi tiết của sinh viên Thế Anh (K235480106004)
 SELECT * FROM [dbo].[fn_DanhSachDiemChiTiet]('K235480106004');
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/7bfbcb7a-da1e-4734-a661-4f83c1d1b117" />
 
  - Ảnh trên em đã khai thác hàm sql
@@ -145,7 +143,7 @@ SELECT * FROM [dbo].[fn_DanhSachDiemChiTiet]('K235480106004');
 Yêu cầu: Xây dựng một hàm thống kê chi tiết kết quả học tập của tất cả sinh viên. Hàm này không chỉ lấy ra điểm số mà còn phải tự động tính toán để xếp loại học lực và đưa ra trạng thái 'Đạt' hoặc 'Học lại' cho từng môn học.
 
 Lý do cần hàm này: Vì logic xếp loại và đánh giá trạng thái (ví dụ: dưới 4.0 là học lại) là các quy tắc nghiệp vụ riêng của nhà trường. Việc sử dụng Multi-statement Function giúp em có thể xử lý từng dòng dữ liệu, áp dụng các điều kiện IF/CASE phức tạp trước khi trả về một bảng báo cáo hoàn chỉnh cho giáo viên
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -185,7 +183,7 @@ END;
 GO
 -- Xem báo cáo thống kê xếp loại của toàn bộ sinh viên
 SELECT * FROM [dbo].[fn_ThongKeXepLoaiChiTiet]();
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/266d47a4-7e7d-440f-bc20-c28015080c37" />
 
 - Ảnh trên em đã khai thác hàm sql
@@ -217,7 +215,7 @@ Giải thích: Cho biết danh sách các người dùng và tiến trình (proc
 Logic kiểm tra: 1. Kiểm tra xem điểm nhập vào có nằm trong khoảng từ 0 đến 10 không. Nếu không, thông báo lỗi và thoát.
 2. Nếu sinh viên và môn học đó đã tồn tại trong bảng điểm, thủ tục sẽ tiến hành Cập nhật (UPDATE) điểm mới.
 3. Nếu chưa tồn tại, thủ tục sẽ tiến hành Thêm mới (INSERT) bản ghi điểm đó
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -261,7 +259,7 @@ EXEC [sp_NhapDiemSinhVien] 'K235480106004', 'SQL01', 10.0, 1;
 
 -- Trường hợp 3: Kiểm tra logic lỗi (Nhập 15 điểm)
 EXEC [sp_NhapDiemSinhVien] 'K235480106004', 'SQL01', 15.0, 1;
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/c178b8ad-51ce-4678-9720-829341dcc6db" />
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/95fad98e-556e-4fc4-903d-e57a4e359789" />
 
@@ -270,7 +268,7 @@ EXEC [sp_NhapDiemSinhVien] 'K235480106004', 'SQL01', 15.0, 1;
  - Yêu cầu: Xây dựng một Store Procedure để Tính điểm trung bình tích lũy của một sinh viên và trả giá trị đó về thông qua tham số OUTPUT.
 
 Lý do cần dùng OUTPUT: Trong các hệ thống lớn, sau khi tính được điểm trung bình, kết quả này thường được dùng ngay để thực hiện các logic tiếp theo như: xét học bổng, xét cảnh báo học vụ hoặc phân loại sinh viên. Việc dùng OUTPUT giúp lập trình viên lấy được giá trị đó ra một cách trực tiếp và nhanh chóng
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -292,7 +290,7 @@ END;
 GO
 -- Gọi thủ tục để xem báo cáo tổng hợp
 EXEC [sp_BaoCaoHocTapToanDien];
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/171351ea-cb10-4c92-9d84-3a81942695d9" />
 
  - Ảnh trên em đã khai thác thành công 1 Store Procedure
@@ -301,7 +299,7 @@ EXEC [sp_BaoCaoHocTapToanDien];
 - Yêu cầu: Xây dựng một Store Procedure để xuất ra Báo cáo kết quả học tập chi tiết của sinh viên.
 
 Lý do cần dùng Result set với JOIN: Trong thực tế, dữ liệu nằm rời rạc ở nhiều bảng: thông tin sinh viên ở bảng [DanhSachSinhVien], tên môn học ở bảng [DanhSachMonHoc], và điểm số ở bảng [KetQuaHocTap]. Để có một báo cáo có nghĩa, em cần thực hiện JOIN 3 bảng này lại với nhau. Việc đưa lệnh này vào Store Procedure giúp hệ thống chỉ cần gọi một câu lệnh đơn giản là có ngay báo cáo tổng hợp mà không cần viết lại đoạn mã phức tạp
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -324,7 +322,7 @@ END;
 GO
 -- Gọi thủ tục để xem toàn bộ báo cáo học tập
 EXEC [sp_BaoCaoKetQuaChiTiet];
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/90178eaa-b130-4bf6-9c9b-088ce25f6506" />
 
 - Ảnh trên em đã khai thác thành công 1 Store Procedure
@@ -334,7 +332,7 @@ EXEC [sp_BaoCaoKetQuaChiTiet];
 * Yêu cầu: Viết một Trigger để khi chúng ta cập nhật mã sinh viên hoặc thông tin cá nhân ở bảng [DanhSachSinhVien] (Bảng A), hệ thống sẽ tự động ghi nhận hoặc kiểm tra tính đồng bộ dữ liệu ở các bảng liên quan (Bảng B)..
 
 Kịch bản thực tế: Giả sử nhà trường có một bảng phụ là [LogThayDoiEmail] để theo dõi lịch sử đổi email của sinh viên. Mỗi khi sinh viên cập nhật email mới ở bảng chính, Trigger sẽ tự động chèn một bản ghi vào bảng phụ này để lưu lại dấu vết (Audit Log). Điều này giúp quản trị viên biết được ai đã đổi email vào lúc nào
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -376,7 +374,7 @@ WHERE [MaSinhVien] = 'K235480106004';
 
 -- Kiểm tra bảng B xem Trigger đã tự động "làm việc" chưa
 SELECT * FROM [LogThayDoiEmail];
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/c701fa57-e24d-4ca0-a478-0d21d04f83a9" />
 
 Hoàn thành ! 
@@ -388,7 +386,7 @@ Khi chèn dữ liệu mới vào bảng A, Trigger 1 sẽ tự động chèn san
 Khi bảng B có sự thay đổi, Trigger 2 sẽ cập nhật ngược lại bảng A để đảm bảo dữ liệu hai bên luôn khớp nhau.
 
 Mục tiêu: Quan sát hiện tượng gì sẽ xảy ra khi hai Trigger gọi nhau liên tiếp
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 CREATE TABLE [KetQuaHocTap_Backup] (
@@ -425,7 +423,7 @@ GO
 INSERT INTO [KetQuaHocTap] ([MaSinhVien], [MaMonHoc], [DiemSo], [HocKy])
 VALUES ('K235480106004', 'CS01', 8.0, 2);
 
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/dac6aee4-382f-4d60-a22e-293ae4e1819d" />
 
 - Hiện tượng: Đây là lỗi Vòng lặp vô hạn (Infinite Loop) hoặc Đệ quy (Recursion).
@@ -447,7 +445,7 @@ Nên ưu tiên sử dụng Store Procedure để xử lý dữ liệu ở một 
 - Yêu cầu: Sử dụng Cursor để duyệt qua danh sách điểm của toàn bộ sinh viên. Với mỗi sinh viên, hệ thống sẽ kiểm tra điểm số và in ra một lời nhắn cá nhân hóa dựa trên kết quả của họ.
 
 Lý do cần dùng Cursor: Vì mỗi sinh viên có một kết quả khác nhau và cần một lời nhắn khác nhau (người thì khen ngợi, người thì nhắc nhở học lại). Việc dùng Cursor giúp em 'cầm tay' từng bản ghi để xử lý riêng biệt các dòng lệnh PRINT phức tạp mà một câu lệnh SELECT thông thường khó trình bày đẹp được
-
+```
 USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -494,14 +492,14 @@ END
 CLOSE cur_ThongBaoDiem;
 DEALLOCATE cur_ThongBaoDiem;
 GO
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/28aab973-aa36-4cb7-8173-4ee2a4690f06" />
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/b3187d2e-6ff8-4245-95f8-8785b55779bf" />
 
 Em đã hoàn thành yêu cầu đề bài là Viết một đoạn script sử dụng CURSOR để duyệt qua danh sách của 1 câu lệnh SQL dạng SELECT
 
 - So sánh tốc độ giữa có dùng cursor và không dùng cursor (nếu cùng kết quả) thì thời gian xử lý cái nào nhanh hơn, cần ảnh chụp màn hình minh chứng.
-
+```
   USE [QuanLyKetQuaHocTap_K235480106004];
 GO
 
@@ -521,7 +519,7 @@ JOIN [KetQuaHocTap] kq ON sv.[MaSinhVien] = kq.[MaSinhVien]
 JOIN [DanhSachMonHoc] mh ON kq.[MaMonHoc] = mh.[MaMonHoc];
 SET STATISTICS TIME ON;
 GO
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/90984971-2180-4adb-8066-cae9f699f589" />
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/8fc4eba9-bb73-4c5c-82f1-247147beb4c5" />
 
@@ -537,7 +535,7 @@ Vậy nên luôn ưu tiên dùng lệnh SELECT thuần túy. Chỉ dùng Cursor 
 
 Bài toán: "Xây dựng kịch bản Bảo trì & Phân quyền hàng loạt"
 Yêu cầu: Nhà trường muốn tạo ra 100 cái Database con cho 100 lớp học khác nhau, hoặc muốn BACKUP từng bảng một thành từng file riêng biệt, hoặc gán quyền truy cập cho tất cả các bảng có tên bắt đầu bằng chữ 'KetQua_'
-
+```
 DECLARE @TableName NVARCHAR(255);
 DECLARE @Sql NVARCHAR(MAX);
 
@@ -563,7 +561,7 @@ END
 
 CLOSE cur_Admin;
 DEALLOCATE cur_Admin;
-
+```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/0c98b7fe-bc3d-404f-8cc0-79f868370263" />
 
 * KẾT LUẬN VỀ SỰ KHÁC BIỆT GIỮA CURSOR VÀ SET-BASED SQL
