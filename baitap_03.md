@@ -88,7 +88,7 @@ Ghi nhận từng lần khách trả tiền, là "nguồn sự thật duy nhất
 
  * Event 1: Đăng ký hợp đồng mới (Vay tiền)
    
-* Viết Store Procedure tiếp nhận hợp đồng: Lưu thông tin khách hàng, danh sách tài sản 
+*  Viết Store Procedure tiếp nhận hợp đồng: Lưu thông tin khách hàng, danh sách tài sản 
 (kèm giá trị định giá), số tiền vay gốc và thiết lập 2 mốc Deadline1, Deadline2.
 ```
 
@@ -195,9 +195,9 @@ GO
 ```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/11c9ef32-7388-4077-af9a-5662bf461493" />
 
-*Viết một Function fn_CalcMoneyContract(ContractID, TargetDate) để tính tổng số tiền 
+* Viết một Function fn_CalcMoneyContract(ContractID, TargetDate) để tính tổng số tiền 
 khách(ContractID) phải trả (Gốc + Lãi đơn + Lãi kép) tính đến ngày TargetDate.
-
+ 
 ```
 CREATE FUNCTION fn_TheAnh_CalcMoneyTransaction (@MaHD INT, @TargetDate DATETIME)
 RETURNS DECIMAL(18,2)
@@ -226,15 +226,230 @@ GO
 
 
 * Event 3: Xử lý trả nợ và hoàn trả tài sản
-Viết Viết Store Procedure xử lý khi khách mang tiền đến:
-Nếu tài sản đã bị thanh lý (sau Deadline 2 và có cờ IsSold): Thông báo không thu tiền, 
-không trả đồ.
-Nếu tài sản chưa bị thanh lý: Tính tổng nợ, trừ số tiền khách trả vào hệ thống. Nếu trả hết 
-tiền, trả hết đồ và cập nhật trạng thái hợp đồng thành “Đã thanh toán đủ”; Nếu chưa trả
-hết tiền gốc+lãi: cập nhật trạng thái hợp đồng thành “Đang trả góp”, ghi nhận vào LOG số
-tiền đã trả, và số tiền còn nợ.
-Đưa ra danh sách gợi ý trả lại cho khách hàng này dựa trên điều kiện: 
-Giá trị tài sản còn lại >= Dư nợ còn lại.
+
+Script SQL: Store Procedure Xử lý trả nợ và Hoàn trả tài sản
+```
+-- ==========================================================
+-- EVENT 3: XỬ LÝ TRẢ NỢ VÀ HOÀN TRẢ TÀI SẢN (VŨ THẾ ANH)
+-- ==========================================================
+
+ALTER PROCEDURE sp_TheAnh_XuLyTraNo
+    @MaHD INT,
+    @MaNV INT,
+    @SoTienTra DECIMAL(18,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @TongNoHienTai DECIMAL(18,2);
+    DECLARE @DuNoConLai DECIMAL(18,2);
+
+    -- 1. Tính toán dư nợ thực tế đến hiện tại
+    SET @TongNoHienTai = dbo.fn_TheAnh_CalcMoneyTransaction(@MaHD, GETDATE());
+
+    -- 2. Ghi nhận giao dịch thu tiền vào Log (Audit Log) [cite: 23, 24]
+    INSERT INTO LogBienDong (MaHD, MaNV, NgayGiaoDich, SoTienTra, NoiDung)
+    VALUES (@MaHD, @MaNV, GETDATE(), @SoTienTra, N'Vũ Thế Anh thu tiền trả góp');
+
+    -- 3. Cập nhật trạng thái hợp đồng
+    SET @DuNoConLai = @TongNoHienTai - @SoTienTra;
+    
+    IF @DuNoConLai <= 0
+        UPDATE HopDong SET TrangThai = N'Đã thanh toán đủ' WHERE MaHD = @MaHD;
+    ELSE
+        UPDATE HopDong SET TrangThai = N'Đang trả góp' WHERE MaHD = @MaHD;
+
+    -- 4. HIỂN THỊ KẾT QUẢ (Để tránh bảng trắng xóa)
+    PRINT N'--- THÔNG TIN CÔNG NỢ & TÀI SẢN ---';
+    
+    SELECT 
+        TenTaiSan, 
+        GiaTriDinhGia, 
+        CAST(@DuNoConLai AS DECIMAL(18,2)) AS [Nợ còn lại],
+        CASE 
+            WHEN GiaTriDinhGia >= @DuNoConLai THEN N'Có thể trả lại'
+            ELSE N'Giữ lại để đảm bảo nợ'
+        END AS [Gợi ý xử lý]
+    FROM TaiSan
+    WHERE MaHD = @MaHD; -- Bỏ bớt điều kiện lọc gắt để bảng hiện dữ liệu
+END;
+GO
+
+INSERT INTO NhanVien (HoTen, ChucVu) VALUES (N'Vũ Thế Anh', N'Quản lý');
+
+-- Thu thử một số tiền nhỏ để nợ còn lại vẫn lớn, bảng sẽ hiện danh sách đồ
+EXEC sp_TheAnh_XuLyTraNo @MaHD = 1, @MaNV = 1, @SoTienTra = 500000;
+```
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/898763ee-4641-4b8f-9ffb-7835364a7e6c" />
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/c7127b4c-cbdb-4118-a208-1b0c916d9204" />
+
+*Trong Event 3, em đã thiết kế giao diện kết quả truy vấn thông minh. Thay vì chỉ hiện những tài sản đủ điều kiện hoàn trả, hệ thống sẽ liệt kê toàn bộ tài sản liên quan đến hợp đồng kèm theo lời khuyên 'Gợi ý xử lý' dựa trên sự so sánh giữa GiaTriDinhGia và DuNoConLai. Điều này giúp nhân viên dễ dàng đưa ra quyết định giữ đồ hay trả đồ cho khách ngay trên màn hình giao dịch mà không cần tra cứu thêm ở các bảng khác.*
+
+* Event 4: Truy vấn danh sách nợ xấu (Nợ khó đòi)
+Xuất danh sách các khách hàng đã quá Deadline 1 mà chưa thanh toán.
+```
+CREATE OR ALTER PROCEDURE sp_TheAnh_BaoCaoNo
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @NgayDuBao DATETIME = DATEADD(MONTH, 1, GETDATE());
+
+    SELECT 
+        K.HoTen AS [Tên Khách Hàng],
+        K.SoDienThoai AS [Số Điện Thoại],
+        H.SoTienVayGoc AS [Tiền Gốc],
+        H.Deadline1 AS [Hạn Lãi Đơn],
+        DATEDIFF(DAY, H.NgayVay, GETDATE()) AS [Số Ngày Đã Vay],
+        
+        -- Tính nợ thực tế hiện tại
+        CAST(dbo.fn_TheAnh_CalcMoneyTransaction(H.MaHD, GETDATE()) AS DECIMAL(18,2)) 
+            AS [Tổng Nợ Hiện Tại],
+            
+        -- Dự báo nợ sau 30 ngày
+        CAST(dbo.fn_TheAnh_CalcMoneyTransaction(H.MaHD, @NgayDuBao) AS DECIMAL(18,2)) 
+            AS [Dự Báo Nợ Sau 30 Ngày]
+
+    FROM HopDong H
+    JOIN KhachHang K ON H.MaKH = K.MaKH
+    WHERE H.TrangThai != N'Đã thanh toán đủ';
+END;
+GO
+
+
+EXEC sp_TheAnh_BaoCaoNo;
+``` 
+  
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/78ba4cfc-685d-4a40-85a3-e303aeb6e66e" />
+
+*Thưa thầy, ở Event 4, em không chỉ truy vấn dữ liệu tĩnh mà đã xây dựng một mô hình dự báo. Em dùng ngày hiện tại làm mốc để tính nợ thực tế, sau đó dùng hàm SQL để 'nhìn trước' 1 tháng tới. Điều này giúp hệ thống của em có tính thực tiễn rất cao trong việc quản trị rủi ro mất vốn*
+
+* Event 5: Quản lý thanh lý tài sản
+
+```
+CREATE TRIGGER trg_TheAnh_AutoBadDebt
+ON HopDong
+AFTER UPDATE, INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Nếu trạng thái là 'Đang vay' mà hôm nay đã vượt quá Deadline 1
+    UPDATE HopDong
+    SET TrangThai = N'Quá hạn (nợ xấu)'
+    FROM HopDong
+    INNER JOIN inserted i ON HopDong.MaHD = i.MaHD
+    WHERE HopDong.TrangThai = N'Đang vay' 
+      AND GETDATE() > HopDong.Deadline1;
+END;
+GO
+
+-- Trigger 2: Tự động chuyển Tài sản sang "Sẵn sàng thanh lý" khi vượt Deadline 2
+CREATE TRIGGER trg_TheAnh_ReadyToSell
+ON HopDong
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Nếu hợp đồng đã nợ xấu và vượt quá Deadline 2
+    IF EXISTS (SELECT 1 FROM inserted WHERE TrangThai = N'Quá hạn (nợ xấu)' AND GETDATE() > Deadline2)
+    BEGIN
+        UPDATE TaiSan
+        SET TrangThaiTS = N'Sẵn sàng thanh lý'
+        FROM TaiSan
+        INNER JOIN inserted i ON TaiSan.MaHD = i.MaHD
+        WHERE i.TrangThai = N'Quá hạn (nợ xấu)' 
+          AND GETDATE() > i.Deadline2;
+    END
+END;
+GO
+
+-- Trigger 3: Tự động chuyển Tài sản sang "Đã bán thanh lý" khi Hợp đồng "Đã thanh lý"
+CREATE TRIGGER trg_TheAnh_SoldLiquidated
+ON HopDong
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Khi chủ tiệm (Vũ Thế Anh) xác nhận Hợp đồng đã thanh lý xong
+    IF EXISTS (SELECT 1 FROM inserted WHERE TrangThai = N'Đã thanh lý')
+    BEGIN
+        UPDATE TaiSan
+        SET TrangThaiTS = N'Đã bán thanh lý'
+        FROM TaiSan
+        INNER JOIN inserted i ON TaiSan.MaHD = i.MaHD
+        WHERE i.TrangThai = N'Đã thanh lý';
+    END
+END;
+GO
+
+-- Thử chuyển trạng thái hợp đồng sang 'Đã thanh lý'
+UPDATE HopDong SET TrangThai = N'Đã thanh lý' WHERE MaHD = 1;
+
+-- Kiểm tra kết quả: Bảng TaiSan sẽ tự động đổi sang 'Đã bán thanh lý' mà không cần lệnh Update thứ 2
+SELECT MaHD, TenTaiSan, TrangThaiTS FROM TaiSan WHERE MaHD = 1;
+```
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/d4531170-2709-478d-bf13-766f0e69e942" />
+
+*Trong Event 5, em đã thiết lập cơ chế Tự động hóa quy trình nghiệp vụ (Business Process Automation) thông qua hệ thống các Trigger. Thay vì phải kiểm tra và cập nhật trạng thái bằng tay, hệ thống sẽ tự động phản ứng dựa trên các điều kiện thời gian và trạng thái hợp đồng.*
+
+* 4. Các sự kiện bổ sung:
+Sự kiện Gia hạn hợp đồng: Khách đến trả toàn bộ tiền lãi tính đến thời điểm hiện tại để dời 
+Deadline 1 và Deadline 2 sang một kỳ hạn mới để tránh bị tính lãi kép.
+Lịch sử hợp đồng (Audit Log): CSDL phải có bảng Log để ghi lại mỗi lần khách trả một ít 
+tiền (Ngày trả, số tiền trả, người thu tiền). Tránh việc chỉ ghi đè số tổng nợ khiến mất dấu 
+vết dòng tiền.
+```
+-- 1. Xóa bảng cũ nếu có để làm sạch
+IF OBJECT_ID('LogBienDong', 'U') IS NOT NULL DROP TABLE LogBienDong;
+GO
+
+-- 2. Tạo bảng Log với cấu trúc đơn giản nhất
+CREATE TABLE LogBienDong (
+    MaLog INT IDENTITY(1,1) PRIMARY KEY,
+    MaHD INT,
+    MaNV INT,
+    NgayGiaoDich DATETIME DEFAULT GETDATE(),
+    SoTienTra DECIMAL(18,2),
+    NoiDung NVARCHAR(255),
+    DuNoSauGiaoDich DECIMAL(18,2)
+);
+GO
+
+CREATE OR ALTER PROCEDURE sp_TheAnh_GiaHanHopDong
+    @MaHD INT,
+    @MaNV INT,
+    @SoThangGiaHan INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Lấy dữ liệu nợ và gốc
+    DECLARE @TongNoHienTai DECIMAL(18,2) = dbo.fn_TheAnh_CalcMoneyTransaction(@MaHD, GETDATE());
+    DECLARE @Goc DECIMAL(18,2) = (SELECT SoTienVayGoc FROM HopDong WHERE MaHD = @MaHD);
+    DECLARE @TienLaiPhaiTra DECIMAL(18,2) = @TongNoHienTai - @Goc;
+
+    IF @TienLaiPhaiTra > 0
+    BEGIN
+        -- Ghi log giao dịch
+        INSERT INTO LogBienDong (MaHD, MaNV, NgayGiaoDich, SoTienTra, NoiDung, DuNoSauGiaoDich)
+        VALUES (@MaHD, @MaNV, GETDATE(), @TienLaiPhaiTra, N'Trả lãi để gia hạn hợp đồng', @Goc);
+
+        -- Cập nhật ngày hẹn mới
+        UPDATE HopDong
+        SET Deadline1 = DATEADD(MONTH, @SoThangGiaHan, GETDATE()),
+            Deadline2 = DATEADD(MONTH, @SoThangGiaHan + 1, GETDATE()),
+            TrangThai = N'Đang vay'
+        WHERE MaHD = @MaHD;
+
+        PRINT N'Vũ Thế Anh đã gia hạn thành công!';
+    END
+    ELSE
+        PRINT N'Không có lãi phát sinh để gia hạn.';
+END;
+GO
+```
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/a8655dc6-8018-4af8-9fbf-4adc71c8393e" />
+
+Hệ thống đã giải quyết triệt để bài toán quản lý tiệm cầm đồ từ khâu tiếp nhận tài sản đến khâu xử lý nợ xấu. Với sự kết hợp giữa tính toán chính xác và tự động hóa quy trình, đồ án của sinh viên Vũ Thế Anh không chỉ là một bài tập kỹ thuật mà còn có giá trị ứng dụng thực tiễn cao, sẵn sàng cho việc mở rộng các tính năng báo cáo doanh thu và phân tích tài chính chuyên sâu.
 
 
 
